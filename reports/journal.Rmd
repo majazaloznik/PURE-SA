@@ -1,0 +1,90 @@
+---
+title: "Journal - Analysis 2017-PURE-SA"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+Notes on analysis of epidemiological data from the South Africa arm of the PURE survey. 
+
+# 4.8.2017
+
+Went to say bye to Lanthe, got a copy of the data from Lanthe. 
+
+Manually copied files to data/PURE/data-raw., output from `ls -1l` below:
+
+```
+-rwx------ 1 sfos0247 mkpasswd 181803 Aug  1 14:19 Combined data 2005_2010.sav
+-rwx------ 1 sfos0247 mkpasswd 340831 Aug  1 14:19 Combined data 2005_2010_2015.sav
+-rwx------ 1 sfos0247 mkpasswd 116350 Aug  1 14:19 Demographic data 2005.sav
+-rwx------ 1 sfos0247 mkpasswd  59339 Aug  1 14:19 Demographic data 2010.sav
+-rwx------ 1 sfos0247 mkpasswd  26536 Aug  1 14:19 Demographic data 2015.sav
+-rwx------ 1 sfos0247 mkpasswd  38732 Aug  1 14:19 Household income 2005.sav
+-rwx------ 1 sfos0247 mkpasswd  31506 Aug  1 14:19 Live events_2005.sav
+-rwx------ 1 sfos0247 mkpasswd  20674 Aug  1 14:19 Live events_2010.sav
+-rwx------ 1 sfos0247 mkpasswd  15034 Aug  1 14:19 Live events_2015.sav
+-rwx------ 1 sfos0247 mkpasswd  47545 Aug  1 14:19 Medical history_2005.sav
+-rwx------ 1 sfos0247 mkpasswd  50087 Aug  1 14:19 Medical history_2010.sav
+-rwx------ 1 sfos0247 mkpasswd  23945 Aug  1 14:19 Medical history_2015.sav
+-rwx------ 1 sfos0247 mkpasswd  12054 Aug  1 14:19 Participant HIV status.sav
+-rwx------ 1 sfos0247 mkpasswd 134948 Aug  1 14:19 Physical measurements.sav
+-rwx------ 1 sfos0247 mkpasswd  25648 Aug  2 09:28 Variables of interestFINAL.docx
+-rwx------ 1 sfos0247 mkpasswd      0 Aug 10 18:47 data-raw-list.txt
+```
+
+Looks like "Combined data 2005_2010_2015.sav" is everything we need?
+
+# 10.8.2017
+
+Need to come up with standard variable names.
+
+Go through `Variables of interestFINAL.docx` and prepare questions for Lanthe re data availability, and notes.
+
+
+## Standard variable names
+
+Use the ones in the .sav files, not our data request. They use undescores, but that's not a big deal.
+
+
+# 11.8.2017
+
+Prepare available variable summaries. 
+
+## Available variables - missing 
+
+Summary table of variables and proportion missing, total N = 2025. 
+(plwh(a) is shorthand for "People with HIV/Aids")
+
+This table needs to be paired with a verision of Sara and mine variable request table, also the order here is alphabetical. 
+
+```{r, echo = FALSE}
+dt <- read.csv("../data/outputs/combined.variables.missing.csv")
+knitr::kable(dt, digits = 2)
+```
+
+## Codebook
+
+The summary statistics for all 73 variables is in the appendix. 
+
+
+
+## Notes
+
+* Cursory inspection seems to indicate the "Combined data 2005_2010_2015.sav" contains all the data the individual files do. Double check with Lanthe.
+
+## Follow-up for Lanthe:
+
+* Does "Combined data 2005_2010_2015.sav" contain all the data that the individual files do?
+
+
+
+# Appendix - codebook 73 vars
+
+Original 73 variables in original order
+
+```{r, echo = FALSE,  message=FALSE, warning=FALSE, results='asis'}
+require(memisc)
+load("../data/outputs/combined.variables.codebook.RData")
+combined.summary
+```
