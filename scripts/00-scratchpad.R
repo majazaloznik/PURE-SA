@@ -1,5 +1,5 @@
 ###############################################################################
-## OVERVIEW 
+## SCRATCHPAD
 ###############################################################################
 library(memisc)
 library(dplyr)
@@ -11,6 +11,8 @@ options(stringsAsFactors = FALSE)
 combined.dataset <- data.frame(as.data.set(spss.system.file(
   "../data/PURE/data-raw/Combined data 2005_2010_2015.sav")))
 
+
+write.csv(colnames(combined.dataset), file="data/outputs/received.varnames.csv")
 # there is an apostrophe in the 2005 income question
 combined.dataset$month_hh_income_2005 <- as.character(combined.dataset$month_hh_income_2005)
 combined.dataset$month_hh_income_2005 <- gsub('â€™', "'", combined.dataset$month_hh_income_2005) 
@@ -37,3 +39,14 @@ data.frame(original.varname = colnames(combined.dataset)) %>%
 write.csv(combined.variables, "data/outputs/combined.variables.missing.csv")
 
 save(combined.summary, file="data/outputs/combined.variables.codebook.RData")
+
+
+## Import combined dataset from SPSS datafile
+combined.dataset <- data.frame(as.data.set(spss.system.file(
+  "../data/PURE/data-raw/Combined data 2005_2010_2015.sav")))
+
+# see what's in the medical history file
+medical.2005 <- data.frame(as.data.set(spss.system.file(
+  "../data/PURE/data-raw/Medical history_2005.sav")))
+
+colnames(medical.2005)

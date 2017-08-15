@@ -4,7 +4,10 @@ output:
   pdf_document: default
   html_document: default
 ---
+```{r setup}
+library(dplyr)
 
+```
 
 Notes on analysis of epidemiological data from the South Africa arm of the PURE survey. 
 
@@ -68,14 +71,67 @@ knitr::kable(dt, digits = 2)
 The summary statistics for all 73 variables is in the appendix. 
 
 
+# 14.8.2017
+
+Merge our variable list with available list.. OK, realise that there are more variables than just in the 'combined file'. So will have to do a merge. 
+
+# 15.8.2017
+
+Merge all datafiles? 
+
+Maybe not all, but how can I automate this without duplicating files already joined by Lanthe. 
+
+Start 01-data-clean.R
+
+OK, file list 
+
+
+```{r, echo = FALSE}
+rv.dt <- read.csv("../data/raw-data/requested-vars.csv")
+received <- read.csv("../data/outputs/received.varnames.csv")
+
+rv.dt %>% mutate(id = 1:nrow(rv.dt)) %>% 
+  dplyr::rename(variables = VARIABLES ) %>% 
+  dplyr::select(id, variables) %>% 
+  mutate(year.2005 = NA, 
+         year.2010 = NA,
+         year.2015 = NA) %>% 
+  as_tibble() %>% 
+  rbind(list(0, "ID", NA, NA, NA), .) -> all.vars
+all.vars[1,3:5] <- rep(received[1,2], 3)
+all.vars[2,3:5] <- received[4:6,2]
+all.vars[3,3:5] <- rep(received[3,2], 3)
+all.vars[4,3:5] <- received[7:9,2]
+all.vars[5,3:5] <- received[10:12,2]
+all.vars[6,3:5] <- received[13:15,2]
+all.vars[7,3:5] <- received[20:22,2]
+all.vars[8,3:5] <- c(received[23,2], NA, NA)
+all.vars <- rbind(all.vars, c(7.5,unlist(all.vars[8,2:5]))) %>% 
+  mutate(id = as.numeric(id)) %>% arrange(id)
+all.vars[9,3:5] <- received[44:46,2]
+
+all.vars[18:28,]
+received[24:35,]
+
+```
 
 ## Notes
 
-* Cursory inspection seems to indicate the "Combined data 2005_2010_2015.sav" contains all the data the individual files do. Double check with Lanthe.
+* in 2010 files there is an additional case #13020, check with Lanthe, but removed for now as presumably typo?
+* in 2010 files there are three cases (3370, 1211 and 1486) that change gender, these are assumed to be typos. 
 
 ## Follow-up for Lanthe:
 
-* Does "Combined data 2005_2010_2015.sav" contain all the data that the individual files do?
+* Number of cases: There are 2021 in the 2005 demographic data file. How are there one more in the 2010 file?
+* what is barcode # 13020 in `Combined data 2005_2010.sav data 2010.sav` and ` Demographic data 2010.sav `, `Live events_2010.sav` and `  Medical history_2010.sav `
+* what is up with barcode # 3370? In  `Demographic data 2005.sav ` they are Female, in `Demographic data 2010.sav ` they are Male, in  `Demographic data 2015.sav ` they have no gender or location recorded. 
+* what is up with barcode # 1211? In  `Demographic data 2005.sav ` they are Female, in `Demographic data 2010.sav ` they are Male, in  `Demographic data 2015.sav ` they are "2", which is presumably again female?
+* what is up with barcode # 1486? In  `Demographic data 2005.sav ` they are Male, in `Demographic data 2010.sav ` they are Female, in  `Demographic data 2015.sav ` they are "1", which is presumably again male? 
+* Additionally there are 16 (2184 2231 2312 2315 2325 3159 3166 3218 3254 4161 4219 4250 4301 4343 4381 4390) where the gender and location data are missing in 2010. Presumably it hasn't changed, but why the inconsistency?
+* 2231 and 2315 have missing genders and most other demographic data in ``Demographic data 2010.sav ` but have other 2010 wave data? How come?
+
+## Techincal points for Lanthe - no need for follow-up
+*  `Demographic data 2015.sav` location and gender are not labeled. 
 
 
 
