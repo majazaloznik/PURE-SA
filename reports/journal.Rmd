@@ -4,7 +4,7 @@ output:
   pdf_document: default
   html_document: default
 ---
-```{r setup}
+```{r setup, message=FALSE, warning=FALSE}
 library(dplyr)
 
 ```
@@ -83,7 +83,7 @@ Maybe not all, but how can I automate this without duplicating files already joi
 
 Start 01-data-clean.R
 
-OK, file list 
+OK, file list, to be continued.. 
 
 
 ```{r, echo = FALSE}
@@ -115,29 +115,88 @@ received[24:35,]
 
 ```
 
-## Notes
 
+# 16.8.2017
+
+OK, the numbers of cases is a complete mess in these 14 files. Like have a look: 
+
+```{r, echo = FALSE, results='asis'}
+file.list.summary <- read.csv( "../data/outputs/file.list.csv")
+knitr::kable(file.list.summary)
+```
+
+So this takes essentially a whole day manually disentangling.. Now I've got 
+
+* Wave 1: 2010 cases. 
+* Wave 2: 1265 cases (745 left the sample = `r 745/2010` percent )
+* Wave 3: 926 cases 
+  + 836 are from Wave 2  - 429 have left `(r 745/2010` percent attrition) 
+  + 90 have returned after missing Wave 2
+
+So in total 836 cases have all three waves (out of 2010 that's `r (2010-836)/2010` percent attrition).
+
+### Data clean up
+
+* Clean number of cases in three main demographic files - tables 3, 4, 5.
+* Double check table 6 - income is OK already in 3. (but there are 10 rows too many)
+* Double check table 7 - income is OK already in 3. 
+* Double check table 8 - income is OK already in 4. (but there is one row too many). 
+
+
+## Notes
+* In 2005 files eleven cases (1011, 2184 3061 3062 3063 4122 4123 4124 4125 4453 4454) are removed for missing everything pretty much (except location for ten of them). 22184 is a duplicate actually, so only the duplicate is removed. 
 * in 2010 files there is an additional case #13020, check with Lanthe, but removed for now as presumably typo?
 * in 2010 files there are three cases (3370, 1211 and 1486) that change gender, these are assumed to be typos. 
+* In 2010 files two cases (2231 and 2315) are removed for missing demographic data.
+* In 2015 files two cases are ducplicate, remove second occurence, even though 2441 has different values for `change diet`
+* In 2015 files remove 3231 4026 4136 4189 because no 2015 wave demographic data.  
 
 ## Follow-up for Lanthe:
 
-* Number of cases: There are 2021 in the 2005 demographic data file. How are there one more in the 2010 file?
-* what is barcode # 13020 in `Combined data 2005_2010.sav data 2010.sav` and ` Demographic data 2010.sav `, `Live events_2010.sav` and `  Medical history_2010.sav `
+`Demographic data 2005.sav`:
+
+* In `Demographic data 2005.sav` file case 1011 has missing all data. 
+* In `Demographic data 2005.sav` file case 2184 is duplicated. 
+* In `Demographic data 2005.sav` file cases   3061 3062 3063 4122 4123 4124 4125 4453 4454
+have  missing all data except location.
+* This removes 11 cases from the first wave, leaving 2010 true cases?
+
+` Demographic data 2010.sav `:
+
+* What is barcode # 13020 in `Combined data 2005_2010.sav data 2010.sav` and ` Demographic data 2010.sav `, `Live events_2010.sav` and `  Medical history_2010.sav `
 * what is up with barcode # 3370? In  `Demographic data 2005.sav ` they are Female, in `Demographic data 2010.sav ` they are Male, in  `Demographic data 2015.sav ` they have no gender or location recorded. 
 * what is up with barcode # 1211? In  `Demographic data 2005.sav ` they are Female, in `Demographic data 2010.sav ` they are Male, in  `Demographic data 2015.sav ` they are "2", which is presumably again female?
 * what is up with barcode # 1486? In  `Demographic data 2005.sav ` they are Male, in `Demographic data 2010.sav ` they are Female, in  `Demographic data 2015.sav ` they are "1", which is presumably again male? 
 * Additionally there are 16 (2184 2231 2312 2315 2325 3159 3166 3218 3254 4161 4219 4250 4301 4343 4381 4390) where the gender and location data are missing in 2010. Presumably it hasn't changed, but why the inconsistency?
-* 2231 and 2315 have missing genders and most other demographic data in ``Demographic data 2010.sav ` but have other 2010 wave data? How come?
+* 2231 and 2315 have missing genders and most other demographic data in ``Demographic data 2010.sav ` but have other 2010 wave data, like life events. How is this possible?
+* In `Demographic data 2015.sav` there are two duplicate cases 2258 and 2441. 
+* In particular, in  `Demographic data 2015.sav`  case 2441 has different values for `change_diet`, making this error doubly concerning. 
+In `Demographic data 2015.sav` four cases (3231 4026 4136 4189) have no demographic info, although they have `change diet`. 
+* Just double checking, there are 539 Rural cases in 2015 - and all of them are missing demographic variables?
+* **Important** when can teh 539 2015 rural cases be coded?
+
+`Household income 2005.sav`
+
+ * Ten cases are here with no values, also don't exist in Wave1. (1011 3061 3062 3063 4122 4123 4124 4125 4453 4454)
+
+`Live events_2010.sav`
+
+* One case too many 13020
+
+`Live events_2015.sav`
+
+* Two duplicated cases: 2477 3100, but identical. 
+
+
 
 ## Techincal points for Lanthe - no need for follow-up
+* There are two variables in `Combined data 2005_2010.sav` that are empty - this is just some artefact of merging?
 *  `Demographic data 2015.sav` location and gender are not labeled. 
+*  In  `Demographic data 2015.sav`  five cases (  2184 2258 2441 2477 3100) are duplicated
 
 
 
-# Appendix - codebook 73 vars
-
-Original 73 variables in original order
+# Appendix - codebook 
 
 ```{r, echo = FALSE,  message=FALSE, warning=FALSE, results='asis'}
 require(memisc)
