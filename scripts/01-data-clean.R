@@ -36,14 +36,17 @@ raw.import <- lapply(raw.import, function(el) el[sapply(el, function(x) !all(is.
 
 file.list <- data.frame(file.name = substr(filenames, 15, 200),
                         no.varz.original = sapply(raw.import, length),
-                        no.cases = sapply(raw.import, nrow))
+                        no.cases = sapply(raw.import, nrow),
+                        no.varz.used = NA,
+                        no.cases.used = NA)
 
-write.csv(file.list, "data/outputs/file.list.csv") # see below
-rm(file.list, filenames)
+
+
 ## 1.2 Check number of rows - there are clearly issues - before merging
 ###############################################################################
 
 ## tables 3 and 4 (2005 and 2010 demographic:)
+###############################################################################
 nrow( raw.import[[3]])
 nrow( raw.import[[4]])
 nrow(full_join(raw.import[[3]], raw.import[[4]]))
@@ -57,6 +60,10 @@ raw.import[[3]][is.na(raw.import[[3]][,3]),]$barcode
 # so we remove these eleven
 raw.import[[3]] <- raw.import[[3]][!is.na(raw.import[[3]][,3]),]
 
+
+# in wave 2 there are also two with all missing:
+raw.import[[4]] <- raw.import[[4]][-which(rowSums(is.na(raw.import[[4]][,2:24]))==22),]
+
 # indicators for individual waves
 raw.import[[3]]$wave.1 <- 1
 raw.import[[4]]$wave.2 <- 1
@@ -65,13 +72,15 @@ raw.import[[4]]$wave.2 <- 1
 left_join(raw.import[[3]], raw.import[[4]], by = "barcode", 
           suffix = c("_2005", "_2010"))  -> fd
 
-# the 13020 case occurs in several other files, let's just add that to the list
-# file.list <- cbind(file.list, no.13020 = sapply(raw.import, 
-#                                                function(x) any(x$barcode == 13020)))
+# nothing from first two tables
+file.list[1:2,4:5] <- 0
 
-
+# used cases and vars from tables 3 and 4 (barcode counted only once in 3.)
+file.list[3,4:5] <- c(ncol(raw.import[[3]]), nrow( raw.import[[3]]))
+file.list[4,4:5] <- c(ncol(raw.import[[4]])-1, nrow( raw.import[[4]]))
 
 ## table 5 (2015 demographic)
+###############################################################################
 # first label location and gender
 raw.import[[5]]$gender <- factor(raw.import[[5]]$gender,
                                         labels = c("Male", "Female"))
@@ -80,13 +89,13 @@ raw.import[[5]]$location <- factor(raw.import[[5]]$location,
 # there are two duplicates in this file, remove
 raw.import[[5]] <- raw.import[[5]][-which(duplicated(raw.import[[5]]$barcode)),]
 
-raw.import[[5]] %>% 
-  mutate(has.age_2015  = ifelse(is.na(age_2015), 0, 1)) %>% 
-  filter(has.age_2015 == 0) %>% 
-  filter(is.na(location)) %>% 
-  pull(barcode) 
-# there are four cases with no 2015 updates on demographic/life, thse are removed
-raw.import[[5]] <- raw.import[[5]][!is.na(raw.import[[5]]$age_2015) | !is.na(raw.import[[5]]$location),]
+# raw.import[[5]] %>% 
+#   mutate(has.age_2015  = ifelse(is.na(age_2015), 0, 1)) %>% 
+#   filter(has.age_2015 == 0) %>% 
+#   filter(is.na(location)) %>% 
+#   pull(barcode) 
+# # there are four cases with no 2015 updates on demographic/life, thse are removed
+# raw.import[[5]] <- raw.import[[5]][!is.na(raw.import[[5]]$age_2015) | !is.na(raw.import[[5]]$location),]
 
 # add a indicator for the case being in 2015 wave
 raw.import[[5]]$wave.3 <- 1
@@ -94,6 +103,10 @@ raw.import[[5]]$wave.3 <- 1
 # merge 
 full_join(fd, raw.import[[5]], by = "barcode") %>% 
   rename(location_2015 = location, gender_2015 = gender)-> fd
+
+# used cases and vars from table 5
+file.list[5,4:5] <- c(ncol(raw.import[[5]])-1, nrow( raw.import[[5]]))
+
 
 # How many are rural 2015 missing demogaphic questions? 539 have age_2015, but no location 
 # and another 4 that don't have age, but have the diet questions  926 are unique 2015 rows
@@ -110,12 +123,18 @@ margin.table(xtabs(~ wave.2+ wave.3, data = fd), 2)
 
 
 ## table 6 (2005 household income) - 2020 cases, that's 10 too many. 
+###############################################################################
+
 # full_join(fd, raw.import[[6]], by = "barcode", suffix = c("", "new")) -> fd
 # all.equal(fd$month_hh_income_2005.x, fd$month_hh_income_2005.y)
 ## correctly merged already, double checked. 
 
+# used cases and vars from table 6
+file.list[6,4:5] <- 0
 
 # # ## table 7 (2005 life events) - 2010 cases good
+###############################################################################
+
 # full_join(fd, raw.import[[7]], by = "barcode", suffix = c("", "_new")) -> fd
 # for (i in 2:length(raw.import[[7]])){
 # x <- all.equal(eval(parse(text=paste0("fd$",colnames(raw.import[[7]])[i]))),
@@ -123,8 +142,12 @@ margin.table(xtabs(~ wave.2+ wave.3, data = fd), 2)
 # print(x)}
 # ## correctly merged already, double checked. 
 
+# used cases and vars from table 7
+file.list[7,4:5] <- 0
+
 
 # # ## table 8 (2010 life events) - 1266 cases - one too many
+###############################################################################
 # full_join(fd, raw.import[[8]], by = "barcode", suffix = c("", "_new")) -> fd
 # fd <- fd[fd$barcode != 13020, ]
 #  for (i in 2:length(raw.import[[8]])){
@@ -133,14 +156,146 @@ margin.table(xtabs(~ wave.2+ wave.3, data = fd), 2)
 #  print(x)}
 # # ## correctly merged already, double checked. 
 
-
-
-# # ## table 9 (2015 life events) - 915 cases - short of 926!, but also two duplicates. 
-
-## check duplicates are the same and delete them
+# used cases and vars from table 8
+file.list[8,4:5] <- 0
+nrow(raw.import[[9]])
+# # ## table 9 (2015 life events) - 915 cases - short of 930? 
+###############################################################################
+## check duplicates are the same and delete them - two 
 # raw.import[[9]][raw.import[[9]]$barcode %in% raw.import[[9]]$barcode[which(duplicated(raw.import[[9]]))],]
 raw.import[[9]] <- raw.import[[9]][-which(duplicated(raw.import[[9]])),]
+# seven cases have all values missing, remove them here:
+raw.import[[9]] <- raw.import[[9]][-which(rowSums(is.na(raw.import[[9]][,2:7]))==6),]
+# add indicator for being in this table
+raw.import[[9]]$wave.3.tab.9 <- 1
+# join with fd.
 full_join(fd, raw.import[[9]], by = "barcode", suffix = c("", "_new")) -> fd
 
+# used cases and vars from table 9
+file.list[9,4:5] <- c(ncol(raw.import[[9]])-1, nrow( raw.import[[9]]))
+fd$wave.3.tab.9[is.na(fd$wave.3.tab.9)] <- 0
+# there are be 24 cases from 5 that are not in 9
+# actually there are 25
+fd$barcode[which(fd$wave.3 == 1 & fd$wave.3.tab.9 ==0)]
+# and one from 9 that is not in 5
+fd$barcode[which(fd$wave.3 == 0 & fd$wave.3.tab.9 ==1)]
+
+
+# # ## table 10 (2005 medical history) - 2021 cases, that'll be too many ;)
+###############################################################################
+
+# # there are 11 cases with missing everything, but they have been removed from 
+# # the base file already, so merge won't change anything.
+# raw.import[[10]][which(rowSums(is.na(raw.import[[10]][,2:14]))==13),]
+# add indicator variable
+raw.import[[10]]$wave.1.med.h <- 1
+
+# remove the eleven
+raw.import[[10]] <- raw.import[[10]][rowSums(is.na(raw.import[[10]][,2:14])) !=13,]
+
+# join with fd. 
+full_join(fd, raw.import[[10]], by = "barcode", suffix = c("", "_new")) -> fd
+fd$wave.1.med.h[is.na(fd$wave.1.med.h)] <- 0
+
+# used cases and vars from table 10
+file.list[10,4:5] <- c(ncol(raw.import[[10]])-1, nrow( raw.import[[10]]))
+
+
+
+# # ## table 11 (2010 medical history) - 2035 cases, that'll be WAY too many ;)
+###############################################################################
+
+#remove ones with no data 
+raw.import[[11]] <- raw.import[[11]][-which(rowSums(is.na(raw.import[[11]][,2:15]))==14),]
+
+# also remove # 13020 
+raw.import[[11]] <- raw.import[[11]][raw.import[[11]]$barcode != 13020,]
+
+# add indicator variable
+raw.import[[11]]$wave.2.med.h <- 1
+
+# join with fd. 
+full_join(fd, raw.import[[11]], by = "barcode", suffix = c("", "_new")) -> fd
+
+fd$wave.2.med.h[is.na(fd$wave.2.med.h)] <- 0
+
+# used cases and vars from table 10
+file.list[11,4:5] <- c(ncol(raw.import[[11]])-1, nrow(raw.import[[11]]))
+
+
+# # ## table 12 (2015 medical history) - 901 cases
+###############################################################################
+## Two duplicates 
+raw.import[[12]] <- raw.import[[12]][!duplicated(raw.import[[12]]$barcode),]
+
+## 2241 is a total dulicate, 2285 has different hypertension, so set to NA
+raw.import[[12]][raw.import[[12]]$barcode == 2258, 'hypertension_2015'] <- NA
+
+# add indicator variable
+raw.import[[12]]$wave.3.med.h <- 1
+
+# join with fd. 
+full_join(fd, raw.import[[12]], by = "barcode", suffix = c("", "_new")) -> fd
+fd$wave.3.med.h[is.na(fd$wave.3.med.h)] <- 0
+
+# used cases and vars from table 12
+file.list[12,4:5] <- c(ncol(raw.import[[12]])-1, nrow(raw.import[[12]]))
+
+# also  there are 31 cases with wave 3 demographic data, but no medical history data
+fd$barcode[fd$wave.3 == 1 & fd$wave.3.med.h == 0]
+
+
+
+# # ## table 13 (HIV status) - 923 
+###############################################################################
+# no duplicates 
+# none with 3 missing values, good to merge
+# add indicator variable
+raw.import[[13]]$hiv.testing <- 1
+
+# join with fd. 
+full_join(fd, raw.import[[13]], by = "barcode", suffix = c("", "_new")) -> fd
+fd$hiv.testing[is.na(fd$hiv.testing)] <- 0
+
+# used cases and vars from table 12
+file.list[13,4:5] <- c(ncol(raw.import[[13]])-1, nrow(raw.import[[13]]))
+
+
+
+# # ## table 14 (Physical measurements) - 2010
+###############################################################################
+# no duplicates 
+# two with completely missing values 
+raw.import[[14]] <- raw.import[[14]][which(rowSums(is.na(raw.import[[14]][,2:10])) != 9),]
+# add indicator variable
+raw.import[[14]]$bmi <- 1
+# join with fd. 
+full_join(fd, raw.import[[14]], by = "barcode", suffix = c("", "_new")) -> fd
+fd$bmi[is.na(fd$bmi)] <- 0
+
+# used cases and vars from table 12
+file.list[14,4:5] <- c(ncol(raw.import[[14]])-1, nrow(raw.import[[14]]))
+
+
+
+
+## 1.3    CLEAN weird characters
+###############################################################################
+fd$month_hh_income_2005 <- gsub('â€™', "'", fd$month_hh_income_2005) 
+
+
+## 2. EXPORT DATA AND SUMMARY TABLE
+###############################################################################
+write.csv(fd, "data/outputs/clean.fd.csv",  row.names = FALSE)
+
+
+## SUMMARY TABLE
+###############################################################################
+# summary of files - list and merged case and variable numbers
+file.list <- rbind(file.list, list("Total", sum(file.list$no.varz.original), 
+                                   max(file.list$no.cases), 
+                                   sum(file.list$no.varz.used, na.rm = TRUE), 
+                                   max(file.list$no.cases.used)))
+write.csv(file.list, "data/outputs/file.list.csv")
 
 
