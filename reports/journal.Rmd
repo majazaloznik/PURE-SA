@@ -133,117 +133,28 @@ So this takes essentially a whole day manually disentangling. See  Now I've got
 
 So in total 836 cases have all three waves (out of 2010 that's `r (2010-836)/2010` percent attrition).
 
+# 17.8.2017
 
+Second day of cleaning up and merging. Finally finished, table here summarizes file case and variable numbers. 
 
-## Notes
-
-### Data clean up
-
-* Clean number of cases in three main demographic files - tables 3, 4, 5:
-    + In 2005 files eleven cases (1011, 2184 3061 3062 3063 4122 4123 4124 4125 4453 4454) are removed for missing everything pretty much (except location for ten of them). 2184 is a duplicate actually, so only the duplicate is removed. 
-    + in 2010 files there is an additional case #13020, check with Lanthe, but removed for now as presumably typo?
-    + in 2010 files there are three cases (3370, 1211 and 1486) that change gender, these are assumed to be typos. 
-    + In 2010 files two cases (2231 and 2315) are removed for missing demographic data.
-    + Two cases have all missing values: 3159 and 4343 - removed
-    + In 2015 files two cases are ducplicate, remove second occurence, even though 2441 has different values for `change diet`
-    + add indicator variables `wave.1`, `wave.2` and `wave.3`
-* Double check table 6 - income is OK already in `Demographic data 2005.sav`. (but there are 10 rows too many)
-* Double check table 7 - `Live events_2005.sav` - same as in 3 `Demographic data 2005.sav`. 
-* Double check table 8 - `Live events_2010.sav` - same as in 4 `Demographic data 2010.sav`.  (but there is one row too many). 
-* Double check table 9 - `Live events_2015.sav` - this was not in table 5, so not 'double' checking. 
-    + Two rows duplicated (2477 3100) -- removed. 
-    + There are seven cases with all values missing (3038 3042 3162 3222 3231 3314 4273) - removed
-    + add indicator variable `wave.3.tab.9`
-    + There is one case in table 9 that is not in table 5 ( 4094), continue counting it as not W3. 
-* Table 10 - `Medical history_2005.sav` - same as 2005:
-    + 2184 is a duplicate, and ten more  cases (1011, 3061 3062 3063 4122 4123 4124 4125 4453 4454) are missing. 
-* Table 11 - `Medical history_2010.sav` - has 25 cases too many:
-    + Fourteen are duplicated 2184 2231 2312 2315 2325 3166 3218 3254 4161 4219 4250 4301 4381 4390
-    + and same 11 that were already missing in 2005. Otherwise looks ok
-    + and 13020 which is not a real thing
-* Table 12 - `Medical history_2015.sav` - 
-    + one complete duplicate 2441 - one removed
-    + one duplicate but with different `hypertension_2015` value - set to NA until comfirmed. 
-* Table 13 `Participant HIV status.sav ` is OK.
-* Tabel 14 `Physical measurements.sav`
-    + Has two cases with completely missing all values (1090 and 1353) - removed
-### Data merge
-
-After clean:
-```{r, echo = FALSE, results = 'asis'}
+```{r, echo = FALSE, results='asis'}
+file.list.summary <- read.csv( "../data/outputs/file.list.csv")
 knitr::kable(file.list.summary)
-
 ```
 
-## Follow-up for Lanthe:
+Details on what was done are in `reports/01-first.trawl.Rmd`. 
 
-`Demographic data 2005.sav`:
+# 18.8.2017
 
-* In `Demographic data 2005.sav` file case 1011 has missing all data. 
-* In `Demographic data 2005.sav` file case 2184 is duplicated. 
-* In `Demographic data 2005.sav` file cases   3061 3062 3063 4122 4123 4124 4125 4453 4454
-have  missing all data except location.
-* This removes 11 cases from the first wave, leaving 2010 true cases?
+Write up all notes on clean and merge, and follow up for Lanthe. 
 
-` Demographic data 2010.sav `:
+Double check 01-data.clean.R is OK, and does everything I want it to do. 
 
-* What is barcode # 13020 in `Combined data 2005_2010.sav data 2010.sav` and ` Demographic data 2010.sav `, `Live events_2010.sav` and `  Medical history_2010.sav `
-* what is up with barcode # 3370? In  `Demographic data 2005.sav ` they are Female, in `Demographic data 2010.sav ` they are Male, in  `Demographic data 2015.sav ` they have no gender or location recorded. 
-* what is up with barcode # 1211? In  `Demographic data 2005.sav ` they are Female, in `Demographic data 2010.sav ` they are Male, in  `Demographic data 2015.sav ` they are "2", which is presumably again female?
-* what is up with barcode # 1486? In  `Demographic data 2005.sav ` they are Male, in `Demographic data 2010.sav ` they are Female, in  `Demographic data 2015.sav ` they are "1", which is presumably again male? 
-* Additionally there are 16 (2184 2231 2312 2315 2325 3159 3166 3218 3254 4161 4219 4250 4301 4343 4381 4390) where the gender and location data are missing in 2010. Presumably it hasn't changed, but why the inconsistency?
-* 2231 and 2315 have missing genders and most other demographic data in ``Demographic data 2010.sav ` but have other 2010 wave data, like life events. How is this possible?
+Some data checking:
 
-` Demographic data 2010.sav `:
+* age should go up five years (+/- one year) between waves. 
 
-* In `Demographic data 2015.sav` there are two duplicate cases 2258 and 2441. 
-* In particular, in  `Demographic data 2015.sav`  case 2441 has different values for `change_diet`, making this error doubly concerning. 
-* Two cases have all missing values: 3159 and 4343
-
-In `Demographic data 2015.sav` four cases (3231 4026 4136 4189) have no demographic info, although they have `change diet`, what are these?
-* Just double checking, there are 539 Rural cases in 2015 - and all of them are missing demographic variables?
-* **Important** when can teh 539 2015 rural cases be coded?
-
-`Household income 2005.sav`
-
- * Ten cases are here with no values, also don't exist in Wave1. (1011 3061 3062 3063 4122 4123 4124 4125 4453 4454)
-
-`Live events_2010.sav`
-
-* One case too many 13020
-
-`Live events_2015.sav`
-
-* Two duplicated cases: 2477 3100, but identical. 
-* seven cases have all missing data (3038 3042 3162 3222 3231 3314 4273), they should not be in this table.
-* Case 4094 is has only two 2015 variables: `birth in family` and `death in family`, but nothing else? Was this person actually in wave three? 
-
-`Medical history_2005`:
-
-* Same 11 as in `Demographic data 2005.sav` have missing data and are removed. 
-
-`Medical history_2010`:
-
-* There are 14 duplicate entries here: 2184 2231 2312 2315 2325 3166 3218 3254 4161 4219 4250 4301 4381 4390, in addition to the 11 ones from 2005 that have no data. Hence 2035 rows instead of 2010
-* also 13020 is here, which is either a duplicate of 1302 or 1320? or sth else?
-
-`Medical history_2015`:
-* There is one duplicate(2241) but there is also a duplicate (2258) which has two different values for hypertension, which is correct or do we not know?
-* Also there are 31 cases with wave 3 demographic data, but no medical history data from 2015: (1016 1044 1064 1103 1230 1238 1313 1419 1425 1437 2090 2187 2255 2352 2389 2398 2400 2444 2469 3058 3103 3109 3227 3351 3382 3397 3488 4025 4062 4139 4187)
-
-`Participant HIV status.sav `:
-* all good
-
-`Physical measurements.sav`: 
-* Has two cases with completely missing all values (1090 and 1353) - removed
-
-
-## Techincal points for Lanthe - no need for follow-up
-* There are two variables in `Combined data 2005_2010.sav` that are empty - this is just some artefact of merging?
-* `Demographic data 2015.sav` location and gender are not labeled. 
-* In  `Demographic data 2015.sav`  five cases (  2184 2258 2441 2477 3100) are duplicated
-* There are 25 cases from W3 with missing life events (1437 2378 2469 2479 3038 3042 3058 3103 3106 3109 3162 3222 3227 3231 3314 3351 3397 3410 3488 4025 4062 4139 4187 4273 4494). 
-
+* never married cannot happen after married already?
 
 # Appendix - codebook 
 

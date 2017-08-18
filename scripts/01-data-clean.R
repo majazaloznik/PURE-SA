@@ -55,29 +55,31 @@ nrow(full_join(raw.import[[3]], raw.import[[4]]))
 # people in the 2010 wave.
 
 # Then there is 1011, who has no data 4453 and 4454 only location 
-# actually there are 11 of them:
+# actually there are 11 of them, one is duplicatred (2184), the others empty
 raw.import[[3]][is.na(raw.import[[3]][,3]),]$barcode
 # so we remove these eleven
 raw.import[[3]] <- raw.import[[3]][!is.na(raw.import[[3]][,3]),]
 
-
+# there are 16 cases with no demographic data
+# two are completely empty, one is 13020 and the other 13 are left in.
+raw.import[[4]]$barcode[which(rowSums(is.na(raw.import[[4]][,2:24]))>=15)]
 # in wave 2 there are also two with all missing:
 raw.import[[4]] <- raw.import[[4]][-which(rowSums(is.na(raw.import[[4]][,2:24]))==22),]
 
 # indicators for individual waves
-raw.import[[3]]$wave.1 <- 1
-raw.import[[4]]$wave.2 <- 1
+raw.import[[3]]$ind.wave.1 <- 1
+raw.import[[4]]$ind.wave.2 <- 1
 # in 2010 furthermore there is at least one barcode input error, #13020, also needs to be removed.
-# so to het rid of the 20 additional cases in 2010 we use a left join on barcode only
+# so  use a left join on barcode only
 left_join(raw.import[[3]], raw.import[[4]], by = "barcode", 
           suffix = c("_2005", "_2010"))  -> fd
-
+fd$ind.wave.2[is.na(fd$ind.wave.2)] <- 0
 # nothing from first two tables
 file.list[1:2,4:5] <- 0
 
 # used cases and vars from tables 3 and 4 (barcode counted only once in 3.)
-file.list[3,4:5] <- c(ncol(raw.import[[3]]), nrow( raw.import[[3]]))
-file.list[4,4:5] <- c(ncol(raw.import[[4]])-1, nrow( raw.import[[4]]))
+file.list[3,4:5] <- c(ncol(raw.import[[3]]), sum(fd$ind.wave.1))
+file.list[4,4:5] <- c(ncol(raw.import[[4]])-1, sum(fd$ind.wave.2))
 
 ## table 5 (2015 demographic)
 ###############################################################################
@@ -89,37 +91,26 @@ raw.import[[5]]$location <- factor(raw.import[[5]]$location,
 # there are two duplicates in this file, remove
 raw.import[[5]] <- raw.import[[5]][-which(duplicated(raw.import[[5]]$barcode)),]
 
-# raw.import[[5]] %>% 
-#   mutate(has.age_2015  = ifelse(is.na(age_2015), 0, 1)) %>% 
-#   filter(has.age_2015 == 0) %>% 
-#   filter(is.na(location)) %>% 
-#   pull(barcode) 
-# # there are four cases with no 2015 updates on demographic/life, thse are removed
-# raw.import[[5]] <- raw.import[[5]][!is.na(raw.import[[5]]$age_2015) | !is.na(raw.import[[5]]$location),]
-
 # add a indicator for the case being in 2015 wave
-raw.import[[5]]$wave.3 <- 1
+raw.import[[5]]$ind.wave.3 <- 1
 
 # merge 
 full_join(fd, raw.import[[5]], by = "barcode") %>% 
   rename(location_2015 = location, gender_2015 = gender)-> fd
-
+fd$ind.wave.3[is.na(fd$ind.wave.3)] <- 0
 # used cases and vars from table 5
-file.list[5,4:5] <- c(ncol(raw.import[[5]])-1, nrow( raw.import[[5]]))
+file.list[5,4:5] <- c(ncol(raw.import[[5]])-1, sum(fd$ind.wave.3))
 
 
-# How many are rural 2015 missing demogaphic questions? 539 have age_2015, but no location 
-# and another 4 that don't have age, but have the diet questions  926 are unique 2015 rows
-# How many are rural 2015 missing demogaphic questions? 539 have no location
+# How many are rural 2015 missing demogaphic questions? 543 have no location 
+# four of these have no age_2015 either. 539? uncoded?
 table(as.character(raw.import[[5]]$location), useNA = "always" )
+table(raw.import[[5]]$location[!is.na(raw.import[[5]]$age_2015)], useNA = "always" )
 
 # NUMBER IN EACH WAVE
-fd$wave.1[is.na(fd$wave.1)] <- 0
-fd$wave.2[is.na(fd$wave.2)] <- 0
-fd$wave.3[is.na(fd$wave.3)] <- 0
-margin.table(xtabs(~ wave.2+ wave.3, data = fd))
-margin.table(xtabs(~ wave.2+ wave.3, data = fd), 1)
-margin.table(xtabs(~ wave.2+ wave.3, data = fd), 2)
+margin.table(xtabs(~ ind.wave.2+ ind.wave.3, data = fd))
+margin.table(xtabs(~ ind.wave.2+ ind.wave.3, data = fd), 1)
+margin.table(xtabs(~ ind.wave.2+ ind.wave.3, data = fd), 2)
 
 
 ## table 6 (2005 household income) - 2020 cases, that's 10 too many. 
@@ -158,53 +149,53 @@ file.list[7,4:5] <- 0
 
 # used cases and vars from table 8
 file.list[8,4:5] <- 0
-nrow(raw.import[[9]])
+
 # # ## table 9 (2015 life events) - 915 cases - short of 930? 
 ###############################################################################
 ## check duplicates are the same and delete them - two 
 # raw.import[[9]][raw.import[[9]]$barcode %in% raw.import[[9]]$barcode[which(duplicated(raw.import[[9]]))],]
 raw.import[[9]] <- raw.import[[9]][-which(duplicated(raw.import[[9]])),]
-# seven cases have all values missing, remove them here:
-raw.import[[9]] <- raw.import[[9]][-which(rowSums(is.na(raw.import[[9]][,2:7]))==6),]
+## seven cases have all values missing, remove them here
+raw.import[[9]] <-   raw.import[[9]][-which(rowSums(is.na(raw.import[[9]][,2:7]))==6),]
 # add indicator for being in this table
-raw.import[[9]]$wave.3.tab.9 <- 1
+raw.import[[9]]$ind.wave.3.tab.9 <- 1
 # join with fd.
 full_join(fd, raw.import[[9]], by = "barcode", suffix = c("", "_new")) -> fd
 
 # used cases and vars from table 9
-file.list[9,4:5] <- c(ncol(raw.import[[9]])-1, nrow( raw.import[[9]]))
-fd$wave.3.tab.9[is.na(fd$wave.3.tab.9)] <- 0
+fd$ind.wave.3.tab.9[is.na(fd$ind.wave.3.tab.9)] <- 0
+file.list[9,4:5] <- c(ncol(raw.import[[9]])-1, sum(fd$ind.wave.3.tab.9))
+
 # there are be 24 cases from 5 that are not in 9
 # actually there are 25
-fd$barcode[which(fd$wave.3 == 1 & fd$wave.3.tab.9 ==0)]
+fd$barcode[which(fd$ind.wave.3 == 1 & fd$ind.wave.3.tab.9 ==0)]
 # and one from 9 that is not in 5
-fd$barcode[which(fd$wave.3 == 0 & fd$wave.3.tab.9 ==1)]
+fd$barcode[which(fd$ind.wave.3 == 0 & fd$ind.wave.3.tab.9 ==1)]
 
 
 # # ## table 10 (2005 medical history) - 2021 cases, that'll be too many ;)
 ###############################################################################
 
-# # there are 11 cases with missing everything, but they have been removed from 
-# # the base file already, so merge won't change anything.
+
 # raw.import[[10]][which(rowSums(is.na(raw.import[[10]][,2:14]))==13),]
 # add indicator variable
-raw.import[[10]]$wave.1.med.h <- 1
+raw.import[[10]]$ind.wave.1.med.h <- 1
 
-# remove the eleven
+# remove the eleven with missing values
 raw.import[[10]] <- raw.import[[10]][rowSums(is.na(raw.import[[10]][,2:14])) !=13,]
 
 # join with fd. 
 full_join(fd, raw.import[[10]], by = "barcode", suffix = c("", "_new")) -> fd
-fd$wave.1.med.h[is.na(fd$wave.1.med.h)] <- 0
+fd$wave.1.med.h[is.na(fd$ind.wave.1.med.h)] <- 0
 
 # used cases and vars from table 10
-file.list[10,4:5] <- c(ncol(raw.import[[10]])-1, nrow( raw.import[[10]]))
+file.list[10,4:5] <- c(ncol(raw.import[[10]])-1, sum(fd$ind.wave.1.med.h))
 
 
 
 # # ## table 11 (2010 medical history) - 2035 cases, that'll be WAY too many ;)
 ###############################################################################
-
+nrow(raw.import[[11]])
 #remove ones with no data 
 raw.import[[11]] <- raw.import[[11]][-which(rowSums(is.na(raw.import[[11]][,2:15]))==14),]
 
@@ -212,15 +203,15 @@ raw.import[[11]] <- raw.import[[11]][-which(rowSums(is.na(raw.import[[11]][,2:15
 raw.import[[11]] <- raw.import[[11]][raw.import[[11]]$barcode != 13020,]
 
 # add indicator variable
-raw.import[[11]]$wave.2.med.h <- 1
+raw.import[[11]]$ind.wave.2.med.h <- 1
 
 # join with fd. 
 full_join(fd, raw.import[[11]], by = "barcode", suffix = c("", "_new")) -> fd
 
-fd$wave.2.med.h[is.na(fd$wave.2.med.h)] <- 0
+fd$ind.wave.2.med.h[is.na(fd$ind.wave.2.med.h)] <- 0
 
 # used cases and vars from table 10
-file.list[11,4:5] <- c(ncol(raw.import[[11]])-1, nrow(raw.import[[11]]))
+file.list[11,4:5] <- c(ncol(raw.import[[11]])-1, sum(fd$ind.wave.2.med.h))
 
 
 # # ## table 12 (2015 medical history) - 901 cases
@@ -232,17 +223,17 @@ raw.import[[12]] <- raw.import[[12]][!duplicated(raw.import[[12]]$barcode),]
 raw.import[[12]][raw.import[[12]]$barcode == 2258, 'hypertension_2015'] <- NA
 
 # add indicator variable
-raw.import[[12]]$wave.3.med.h <- 1
+raw.import[[12]]$ind.wave.3.med.h <- 1
 
 # join with fd. 
 full_join(fd, raw.import[[12]], by = "barcode", suffix = c("", "_new")) -> fd
-fd$wave.3.med.h[is.na(fd$wave.3.med.h)] <- 0
+fd$ind.wave.3.med.h[is.na(fd$ind.wave.3.med.h)] <- 0
 
 # used cases and vars from table 12
-file.list[12,4:5] <- c(ncol(raw.import[[12]])-1, nrow(raw.import[[12]]))
+file.list[12,4:5] <- c(ncol(raw.import[[12]])-1, sum(fd$ind.wave.3.med.h))
 
 # also  there are 31 cases with wave 3 demographic data, but no medical history data
-fd$barcode[fd$wave.3 == 1 & fd$wave.3.med.h == 0]
+fd$barcode[fd$ind.wave.3 == 1 & fd$ind.wave.3.med.h == 0]
 
 
 
@@ -251,14 +242,15 @@ fd$barcode[fd$wave.3 == 1 & fd$wave.3.med.h == 0]
 # no duplicates 
 # none with 3 missing values, good to merge
 # add indicator variable
-raw.import[[13]]$hiv.testing <- 1
+raw.import[[13]]$ind.hiv.testing <- 1
 
 # join with fd. 
 full_join(fd, raw.import[[13]], by = "barcode", suffix = c("", "_new")) -> fd
-fd$hiv.testing[is.na(fd$hiv.testing)] <- 0
+fd$ind.hiv.testing[is.na(fd$ind.hiv.testing)] <- 0
 
 # used cases and vars from table 12
-file.list[13,4:5] <- c(ncol(raw.import[[13]])-1, nrow(raw.import[[13]]))
+file.list[13,4:5] <- c(ncol(raw.import[[13]])-1, 
+                       sum(fd$ind.hiv.testing))
 
 
 
@@ -268,13 +260,13 @@ file.list[13,4:5] <- c(ncol(raw.import[[13]])-1, nrow(raw.import[[13]]))
 # two with completely missing values 
 raw.import[[14]] <- raw.import[[14]][which(rowSums(is.na(raw.import[[14]][,2:10])) != 9),]
 # add indicator variable
-raw.import[[14]]$bmi <- 1
+raw.import[[14]]$ind.bmi <- 1
 # join with fd. 
 full_join(fd, raw.import[[14]], by = "barcode", suffix = c("", "_new")) -> fd
-fd$bmi[is.na(fd$bmi)] <- 0
+fd$ind.bmi[is.na(fd$ind.bmi)] <- 0
 
 # used cases and vars from table 12
-file.list[14,4:5] <- c(ncol(raw.import[[14]])-1, nrow(raw.import[[14]]))
+file.list[14,4:5] <- c(ncol(raw.import[[14]])-1, sum(fd$ind.bmi))
 
 
 
